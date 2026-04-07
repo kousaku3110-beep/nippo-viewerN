@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>日報ビューア</title>
+  <style>
+    :root{
+      --bg1:#0b1020;
+      --bg2:#121a33;
+      --card: rgba(255,255,255,.08);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.68);
+      --line: rgba(255,255,255,.14);
+      --shadow: 0 18px 40px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 500px at 20% -10%, rgba(124,92,255,.35), transparent 60%),
+        radial-gradient(900px 500px at 90% 10%, rgba(36,211,238,.25), transparent 55%),
+        linear-gradient(160deg, var(--bg1), var(--bg2));
+      min-height:100vh;
+    }
+    .wrap{max-width:980px;margin:0 auto;padding:20px 16px 44px;}
+    header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:10px 0 18px;}
+    .title{display:flex;gap:12px;align-items:center;}
+    .logo{
+      width:44px;height:44px;border-radius:14px;
+      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(36,211,238,.85));
+      box-shadow: 0 10px 24px rgba(124,92,255,.25);
+      display:grid;place-items:center;font-weight:800;
+    }
+    h1{font-size:18px;margin:0;letter-spacing:.02em;}
+    .sub{margin:4px 0 0;font-size:12px;color:var(--muted);}
+    .pill{
+      display:flex;gap:8px;align-items:center;justify-content:space-between;
+      padding:10px 12px;min-width:210px;
+      border:1px solid var(--line);background:rgba(255,255,255,.06);
+      border-radius:999px;backdrop-filter:blur(10px);
+      box-shadow:0 10px 24px rgba(0,0,0,.18);
+      font-size:12px;color:var(--muted);
+    }
+    .pill b{color:var(--text);font-weight:700}
+    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;}
+    @media (max-width:860px){.grid{grid-template-columns:1fr}.pill{min-width:0}}
+    .card{
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(10px);
+      overflow:hidden;
+    }
+    .cardHeader{
+      padding:14px 14px 10px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      border-bottom:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+    }
+    .cardHeader h2{margin:0;font-size:14px;letter-spacing:.02em}
+    .badge{
+      font-size:11px;padding:5px 10px;border-radius:999px;
+      border:1px solid var(--line);color:var(--muted);
+      background:rgba(255,255,255,.05);
+    }
+    .cardBody{padding:14px;}
+    .btnRow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    @media (max-width:460px){.btnRow{grid-template-columns:1fr}}
+    .btn{
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      border-radius:14px;padding:12px 12px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;
+      transition:transform .08s ease, background .2s ease, border-color .2s ease;
+    }
+    .btn:hover{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.22);}
+    .btn:active{transform:translateY(1px) scale(.99);}
+    .btn:disabled{opacity:.5;cursor:not-allowed;}
+    .btn .left{display:flex;gap:10px;align-items:center;min-width:0;}
+    .icon{
+      width:36px;height:36px;border-radius:12px;display:grid;place-items:center;
+      background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+      flex:0 0 auto;
+    }
+    .label{display:flex;flex-direction:column;gap:3px;min-width:0;}
+    .label strong{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .label span{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .chev{opacity:.75;font-weight:900}
+    .btn.primary{background:linear-gradient(135deg, rgba(124,92,255,.92), rgba(36,211,238,.72));border-color:rgba(255,255,255,.22);}
+    .btn.good{outline:1px solid rgba(34,197,94,.35)}
+    .btn.warn{outline:1px solid rgba(245,158,11,.35)}
+    .viewer{min-height:260px;display:flex;flex-direction:column;gap:10px;}
+    .meta{display:flex;flex-wrap:wrap;gap:8px;color:var(--muted);font-size:12px;align-items:center;}
+    .dot{width:4px;height:4px;border-radius:999px;background:rgba(255,255,255,.35);}
+    .content{
+      border:1px solid var(--line);background:rgba(0,0,0,.20);
+      border-radius:14px;padding:12px;line-height:1.7;
+      color:rgba(255,255,255,.90);white-space:pre-wrap;font-size:13px;
+    }
+    .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;}
+    .mini{
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      padding:10px 12px;border-radius:12px;
+      cursor:pointer;font-size:12px;
+    }
+    .range{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:12px;}
+    input[type="range"]{width:140px;}
+    footer{margin-top:16px;color:var(--muted);font-size:11px;text-align:center;}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;}
+    .fetchTimestamp{font-size:12px;color:var(--muted);margin-top:8px;padding:8px;border-top:1px solid var(--line);}
+    .controlsRow{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+    .controlsRow .mini{flex:1;min-width:60px;text-align:center;}
+    @media (max-width:600px){.controlsRow{grid-template-columns:repeat(3,1fr)}}
+    .cacheInfo{font-size:11px;color:var(--muted);margin-top:6px;padding:6px;border-top:1px solid var(--line);}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <div class="logo">N</div>
+        <div>
+          <h1>日報ビューア</h1>
+          <div class="sub">Google Drive の最新日報を表示・読み上げ</div>
+        </div>
+      </div>
+      <div class="pill"><span>状態</span><b id="status">待機中</b></div>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <div class="cardHeader"><h2>📥 日報取得</h2><span class="badge">起動ボタン</span></div>
+        <div class="cardBody">
+          <button class="btn primary" id="btnFetch">
+            <div class="left">
+              <div class="icon">⚡</div>
+              <div class="label">
+                <strong>日報取得（最新）</strong>
+                <span>Google Drive から最新日報を取得</span>
+              </div>
+            </div>
+            <div class="chev">›</div>
+          </button>
+          <div class="fetchTimestamp" id="fetchTimestamp"></div>
+          <div class="cacheInfo" id="cacheInfo"></div>
+          <div style="height:12px"></div>
+          <div class="card" style="box-shadow:none">
+            <div class="cardHeader"><h2>🚀 業務報告実行</h2><span class="badge">自動実行</span></div>
+            <div class="cardBody">
+              <button class="btn primary" id="btnExecuteReport">
+                <div class="left">
+                  <div class="icon">⚡</div>
+                  <div class="label">
+                    <strong>今すぐ実行</strong>
+                    <span>掲示板から最新投稿を取得・Drive に保存</span>
+                  </div>
+                </div>
+                <div class="chev">›</div>
+              </button>
+              <div id="reportStatus"></div>
+            </div>
+          </div>
+          <div style="height:12px"></div>
+          <div class="card" style="box-shadow:none">
+            <div class="cardHeader"><h2>📄 対象者の日報全文</h2><span class="badge">全文版</span></div>
+            <div class="cardBody">
+              <div class="btnRow">
+                <button class="btn good" id="btnViewFull">
+                  <div class="left"><div class="icon">👀</div>
+                    <div class="label"><strong>全文閲覧</strong><span>最新の「全文版」を表示</span></div>
+                  </div><div class="chev">›</div>
+                </button>
+                <button class="btn good" id="btnSpeakFull">
+                  <div class="left"><div class="icon">🔊</div>
+                    <div class="label"><strong>全文再生</strong><span>ブラウザ音声で読み上げ</span></div>
+                  </div><div class="chev">›</div>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div style="height:12px"></div>
+          <div class="card" style="box-shadow:none">
+            <div class="cardHeader"><h2>🧭 監視ワードの抽出</h2><span class="badge">要約版</span></div>
+            <div class="cardBody">
+              <div class="btnRow">
+                <button class="btn warn" id="btnViewSummary">
+                  <div class="left"><div class="icon">👁️</div>
+                    <div class="label"><strong>要約閲覧</strong><span>最新の「要約版」を表示</span></div>
+                  </div><div class="chev">›</div>
+                </button>
+                <button class="btn warn" id="btnSpeakSummary">
+                  <div class="left"><div class="icon">🎧</div>
+                    <div class="label"><strong>要約再生</strong><span>ブラウザ音声で読み上げ</span></div>
+                  </div><div class="chev">›</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="cardHeader"><h2>🪟 ビューワ</h2><span class="badge" id="viewerBadge">未取得</span></div>
+        <div class="cardBody viewer">
+          <div class="toolbar">
+            <div class="meta">
+              <span id="metaDate">日付：-</span><span class="dot"></span><span id="metaFile">ファイル：-</span>
+            </div>
+            <div class="range">
+              <span>速度</span>
+              <input id="rate" type="range" min="0.7" max="1.4" step="0.05" value="1.0" />
+              <span id="rateVal">1.00</span>
+            </div>
+          </div>
+          <div class="controlsRow">
+            <button class="mini" id="btnPrev">⏮ 戻る</button>
+            <button class="mini" id="btnStop">⏹ 停止</button>
+            <button class="mini" id="btnResume">▶ 再開</button>
+            <button class="mini" id="btnNext">⏭ 次へ</button>
+          </div>
+          <div class="content" id="content">まず「日報取得（最新）」を押してね。</div>
+          <footer>© NIPPO Viewer</footer>
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+  // ===== 設定 =====
+  const APPS_SCRIPT_WEB_URL = "https://script.google.com/macros/s/AKfycbwn8Kqw6dReBh97ki94LzZYnd0qo5Zo6xXiwrbak_MDO48k0X_NxyEyt6cZZ3Q7efj4kQ/exec";
+  const CACHE_KEY = "nippo_viewer_cache";
+  const CACHE_TIMESTAMP_KEY = "nippo_viewer_cache_time";
+  const STATE_KEY = "nippo_viewer_state";
+
+  // ===== 状態管理 =====
+  const state = {
+    bundle: null,
+    viewKind: null,
+    speech: { paragraphs: [], idx: 0, paused: false },
+    fetchedAt: null,
+    wakeLock: null,
+    audioContext: null
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const setStatus = (s) => $("status").textContent = s;
+
+  function setViewerMeta({dateFolderName, fileName, kind}) {
+    $("metaDate").textContent = `日付：${dateFolderName || "-"}`;
+    $("metaFile").textContent = `ファイル：${fileName || "-"}`;
+    $("viewerBadge").textContent = kind ? (kind === "summary" ? "要約表示" : "全文表示") : "未取得";
+  }
+
+  function showText(text, meta) {
+    $("content").textContent = text || "";
+    setViewerMeta(meta || {});
+  }
+
+  function formatDateTime(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const h = String(date.getHours()).padStart(2, '0');
+    const mi = String(date.getMinutes()).padStart(2, '0');
+    return `${y}-${m}-${d} ${h}:${mi}`;
+  }
+
+  function updateFetchTimestamp() {
+    if (state.fetchedAt) {
+      $("fetchTimestamp").textContent = `取得日時：${formatDateTime(state.fetchedAt)}`;
+    } else {
+      $("fetchTimestamp").textContent = "";
+    }
+  }
+
+  function updateCacheInfo() {
+    const cacheTime = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+    if (cacheTime) {
+      const date = new Date(parseInt(cacheTime));
+      $("cacheInfo").textContent = `💾 キャッシュ：${formatDateTime(date)}`;
+    } else {
+      $("cacheInfo").textContent = "";
+    }
+  }
+
+  // ===== ローカルストレージ操作 =====
+  function saveState() {
+    try {
+      const stateData = {
+        bundle: state.bundle,
+        viewKind: state.viewKind,
+        fetchedAt: state.fetchedAt ? state.fetchedAt.toISOString() : null
+      };
+      localStorage.setItem(STATE_KEY, JSON.stringify(stateData));
+    } catch (e) {
+      console.log("状態保存失敗", e);
+    }
+  }
+
+  function loadState() {
+    try {
+      const saved = localStorage.getItem(STATE_KEY);
+      if (saved) {
+        const stateData = JSON.parse(saved);
+        state.bundle = stateData.bundle;
+        state.viewKind = stateData.viewKind;
+        state.fetchedAt = stateData.fetchedAt ? new Date(stateData.fetchedAt) : null;
+        return true;
+      }
+    } catch (e) {
+      console.log("状態復元失敗", e);
+    }
+    return false;
+  }
+
+  function saveToCache(bundle) {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(bundle));
+      localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+      updateCacheInfo();
+    } catch (e) {
+      console.log("キャッシュ保存失敗", e);
+    }
+  }
+
+  function loadFromCache() {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (e) {
+      console.log("キャッシュ読み込み失敗", e);
+    }
+    return null;
+  }
+
+  function clearCache() {
+    try {
+      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIMESTAMP_KEY);
+      updateCacheInfo();
+    } catch (e) {
+      console.log("キャッシュ削除失敗", e);
+    }
+  }
+
+  // ===== Wake Lock（常時保持）=====
+  async function acquireWakeLock() {
+    if (!("wakeLock" in navigator)) return;
+    try {
+      if (!state.wakeLock) {
+        state.wakeLock = await navigator.wakeLock.request("screen");
+      }
+      document.addEventListener("visibilitychange", async () => {
+        if (document.hidden && state.wakeLock) {
+          try {
+            state.wakeLock.release();
+            state.wakeLock = null;
+          } catch (e) {
+            console.log("Wake Lock 解放エラー", e);
+          }
+        } else if (!document.hidden && !state.wakeLock) {
+          try {
+            state.wakeLock = await navigator.wakeLock.request("screen");
+          } catch (e) {
+            console.log("Wake Lock 再取得エラー", e);
+          }
+        }
+      });
+    } catch (e) {
+      console.log("Wake Lock 取得失敗", e);
+    }
+  }
+
+  function releaseWakeLock() {
+    if (state.wakeLock) { 
+      try {
+        state.wakeLock.release(); 
+        state.wakeLock = null; 
+      } catch (e) {
+        console.log("Wake Lock 解放エラー", e);
+      }
+    }
+  }
+
+  // ===== Audio Context 初期化 =====
+  function initAudioContext() {
+    if (state.audioContext) return;
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      state.audioContext = new AudioContext();
+    } catch (e) {
+      console.log("Audio Context 初期化失敗", e);
+    }
+  }
+
+  // ===== Apps Script を経由して日報を取得 =====
+  async function fetchLatestBundleFromDrive() {
+    setStatus("Drive検索中…");
+    
+    try {
+      const response = await fetch(`${APPS_SCRIPT_WEB_URL}?action=getLatestReport`);
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || 'ファイル取得失敗');
+      }
+      
+      state.bundle = {
+        dateKey: data.dateFolderName,
+        dateFolderName: data.dateFolderName,
+        summary: { id: '', name: data.summary.name, text: data.summary.text },
+        full: { id: '', name: data.full.name, text: data.full.text },
+      };
+      state.fetchedAt = new Date();
+      updateFetchTimestamp();
+      
+      // 状態とキャッシュを保存
+      saveState();
+      saveToCache(state.bundle);
+      
+      setStatus("取得OK");
+      return state.bundle;
+    } catch (e) {
+      setStatus("取得失敗");
+      throw e;
+    }
+  }
+
+  function ensureBundle() {
+    if (state.bundle) return Promise.resolve(state.bundle);
+    
+    // キャッシュから復元
+    const cached = loadFromCache();
+    if (cached) {
+      state.bundle = cached;
+      state.fetchedAt = new Date(localStorage.getItem(CACHE_TIMESTAMP_KEY));
+      updateFetchTimestamp();
+      setStatus("キャッシュから復元");
+      return Promise.resolve(state.bundle);
+    }
+    
+    return fetchLatestBundleFromDrive();
+  }
+
+  async function view(kind) {
+    const b = await ensureBundle();
+    state.viewKind = kind;
+    const item = kind === "summary" ? b.summary : b.full;
+    showText(item.text, { dateFolderName: b.dateFolderName, fileName: item.name, kind });
+    prepareSpeech(item.text);
+    saveState(); // 画面表示状態を保存
+  }
+
+  function prepareSpeech(text) {
+    const paras = (text || "").split(/\n{2,}/).map(s => s.trim()).filter(Boolean);
+    state.speech.paragraphs = paras.length ? paras : [(text || "").trim()];
+    state.speech.idx = 0;
+    state.speech.paused = false;
+  }
+
+  function speakFromCurrent() {
+    if (!("speechSynthesis" in window)) { alert("音声読み上げ未対応"); return; }
+    
+    initAudioContext();
+    acquireWakeLock(); // 常時 Wake Lock を保持
+    
+    window.speechSynthesis.cancel();
+    const paras = state.speech.paragraphs;
+    let idx = state.speech.idx;
+    if (!paras || !paras.length) return;
+    
+    const rate = parseFloat($("rate").value || "1.0");
+    const u = new SpeechSynthesisUtterance(paras[idx]);
+    u.lang = "ja-JP";
+    u.rate = rate;
+    u.pitch = 1.0;
+    u.volume = 1.0;
+    u.onend = () => {
+      if (state.speech.paused) return;
+      idx++;
+      if (idx < paras.length) { state.speech.idx = idx; speakFromCurrent(); }
+      else { setStatus("読み上げ完了"); releaseWakeLock(); }
+    };
+    u.onerror = () => { setStatus("読み上げエラー"); releaseWakeLock(); };
+    setStatus("読み上げ中…");
+    window.speechSynthesis.speak(u);
+  }
+
+  async function executeReport() {
+    const btn = $("btnExecuteReport");
+    try {
+      btn.disabled = true;
+      await fetch(APPS_SCRIPT_WEB_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "executeMain" }),
+        mode: "no-cors"
+      });
+      setStatus("✅ 実行しました");
+      clearCache();
+    } catch (e) {
+      setStatus(`❌ エラー: ${e.message}`);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ===== イベント =====
+  $("rate").addEventListener("input", () => $("rateVal").textContent = Number($("rate").value).toFixed(2));
+  $("btnFetch").addEventListener("click", async () => {
+    try {
+      await fetchLatestBundleFromDrive();
+      await view("summary");
+    } catch (e) {
+      setStatus("取得失敗");
+      alert(e.message);
+    }
+  });
+  $("btnViewFull").addEventListener("click", () => view("full").catch(e => alert(e.message)));
+  $("btnViewSummary").addEventListener("click", () => view("summary").catch(e => alert(e.message)));
+  $("btnSpeakFull").addEventListener("click", async () => { initAudioContext(); await view("full"); speakFromCurrent(); });
+  $("btnSpeakSummary").addEventListener("click", async () => { initAudioContext(); await view("summary"); speakFromCurrent(); });
+  $("btnStop").addEventListener("click", () => { state.speech.paused = true; window.speechSynthesis.cancel(); setStatus("停止"); releaseWakeLock(); });
+  $("btnResume").addEventListener("click", () => { state.speech.paused = false; speakFromCurrent(); });
+  $("btnNext").addEventListener("click", () => { const n = state.speech.paragraphs.length; state.speech.idx = Math.min(state.speech.idx + 1, n - 1); state.speech.paused = false; speakFromCurrent(); });
+  $("btnPrev").addEventListener("click", () => { state.speech.idx = Math.max(state.speech.idx - 1, 0); state.speech.paused = false; speakFromCurrent(); });
+  $("btnExecuteReport").addEventListener("click", executeReport);
+
+  // ===== 起動時の処理 =====
+  window.addEventListener("DOMContentLoaded", () => {
+    initAudioContext();
+    acquireWakeLock(); // 起動時から Wake Lock を保持
+    
+    // 状態を復元
+    if (loadState()) {
+      updateFetchTimestamp();
+      updateCacheInfo();
+      // 保存された状態を画面に反映
+      if (state.bundle && state.viewKind) {
+        const item = state.viewKind === "summary" ? state.bundle.summary : state.bundle.full;
+        showText(item.text, { dateFolderName: state.bundle.dateFolderName, fileName: item.name, kind: state.viewKind });
+        prepareSpeech(item.text);
+        setStatus("前回の状態を復元しました");
+      } else {
+        setStatus("準備OK");
+      }
+    } else {
+      updateCacheInfo();
+      setStatus("準備OK");
+    }
+  });
+
+  // ページを離れるとき、状態を保存
+  window.addEventListener("beforeunload", () => {
+    saveState();
+  });
+</script>
+</body>
+</html>
