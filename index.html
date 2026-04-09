@@ -123,6 +123,73 @@
     .controlsRow .mini{flex:1;min-width:60px;text-align:center;}
     @media (max-width:600px){.controlsRow{grid-template-columns:repeat(3,1fr)}}
     .cacheInfo{font-size:11px;color:var(--muted);margin-top:6px;padding:6px;border-top:1px solid var(--line);}
+    .takemura-badge {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 900;
+      color: #fff;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+      letter-spacing: 0.1em;
+      animation: takemura-glow 2s infinite alternate;
+      vertical-align: text-bottom;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.1s ease;
+    }
+    .takemura-badge:active {
+      transform: scale(0.9) !important;
+    }
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+    .quote-toast {
+      background: linear-gradient(135deg, rgba(20, 25, 45, 0.95), rgba(30, 36, 60, 0.95));
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-left: 4px solid #f5576c;
+      color: #fff;
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      font-size: 13.5px;
+      line-height: 1.5;
+      max-width: 300px;
+      pointer-events: auto;
+      animation: slide-up-toast 0.4s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .quote-toast strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 11px;
+      color: #fca5a5;
+      letter-spacing: 1px;
+    }
+    .quote-toast.fade-out {
+      animation: fade-out-toast 0.4s forwards ease-in;
+    }
+    @keyframes slide-up-toast {
+      from { opacity: 0; transform: translateY(30px) scale(0.9); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes fade-out-toast {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(15px) scale(0.9); }
+    }
+    @keyframes takemura-glow {
+      0% { box-shadow: 0 0 8px rgba(245, 87, 108, 0.4); transform: scale(1); }
+      100% { box-shadow: 0 0 16px rgba(240, 147, 251, 0.8), 0 0 24px rgba(245, 87, 108, 0.6); transform: scale(1.05); }
+    }
   </style>
 </head>
 <body>
@@ -131,7 +198,7 @@
       <div class="title">
         <div class="logo">N</div>
         <div>
-          <h1>日報ビューア水野ハッキング</h1>
+          <h1>日報ビューア水野ハッキング <span class="takemura-badge" id="btnTakemura" title="武村名言ポンチョ">武村</span></h1>
           <div class="sub">Google Drive の最新日報を表示・読み上げ</div>
         </div>
       </div>
@@ -566,6 +633,52 @@
   // ページを離れるとき、状態を保存
   window.addEventListener("beforeunload", () => {
     saveState();
+  });
+
+  // ===== 武村名言ポンチョ =====
+  const takemuraQuotes = [
+    "「思い立ったが吉日。今すぐやろう。」", "「完璧を目指すより、まず終わらせろ。」", "「今日のコードは明日のレガシー。」", "「動いているなら、触るな。」", "「失敗は成功の母。」",
+    "「急がば回れ、時には落ち着くことも大切だ。」", "「悩むくらいなら、手を動かそう。」", "「できない理由より、できる方法を考えよう。」", "「明日は明日の風が吹く。」", "「千里の道も一歩から。」",
+    "「ローマは一日にして成らず。」", "「継続は力なり。」", "「ピンチはチャンスだ。」", "「三日坊主でも、十回やれば一ヶ月だ。」", "「七転び八起き。」",
+    "「笑う門には福来る。」", "「初心忘るべからず。」", "「時間は有限、可能性は無限。」", "「迷ったら、困難な道を選べ。」", "「一番の近道は、遠回りすることだ。」",
+    "「他人の意見で、自分の内なる声をかき消してはいけない。」", "「未来を予測する最良の方法は、それを創り出すことだ。」", "「行動しなければ、何も変わらない。」", "「幸運は、準備と機会が出会う場所にある。」", "「限界は、自分が決めているだけだ。」",
+    "「失敗を恐れるな。何もしないことを恐れよ。」", "「小さな改善が、大きな結果を生む。」", "「結果が出ない時は、根を伸ばす時期だ。」", "「諦めるのは、いつでもできる。」", "「人生は短い。つまらないコードを書いている暇はない。」",
+    "「とりあえず再起動してみた？」", "「ログは嘘をつかない。」", "「エラーは友達。恐れずに向き合おう。」", "「キャッシュをクリアしてみて。」", "「バックアップは息継ぎと同じくらい重要だ。」",
+    "「バグではなく、仕様です…と言える勇気。」", "「見えないところで頑張っている人がいる。」", "「誰かがやるのを待つな、自分がやれ。」", "「休息もまた、仕事のうち。」", "「ありがとう、を出し惜しみしない。」",
+    "「昨日の自分を、今日超えられているか。」", "「困難な時こそ、笑顔を見せよう。」", "「他人の成功を喜べる人は、自分も成功する。」", "「一つのことに集中しろ。」", "「焦っても、良いことはない。」",
+    "「まずは深呼吸。」", "「視点を変えれば、解決策が見えてくる。」", "「シンプル・イズ・ベスト。」", "「複雑なものをシンプルにするのがプロだ。」", "「プロの仕事は、準備で8割決まる。」",
+    "「常に最適化を心がけよ。」", "「思い込みは最大のバグだ。」", "「聞くは一時の恥、聞かぬは一生の恥。」", "「学ぶことに遅すぎることはない。」", "「知識は、使って初めて知恵になる。」",
+    "「とりあえずやってみる、の精神。」", "「失敗したデータも、価値あるデータだ。」", "「他人のコードを恨むな。未来の自分が書いたものかもしれない。」", "「コーヒーブレイクは、ひらめきの源。」", "「今日も一日、生き延びただけで偉い。」",
+    "「良い質問は、良い答えを引き出す。」", "「本質を見極めよ。」", "「時には、捨てる勇気も必要だ。」", "「自分にしかできないことを見つけよう。」", "「やり直すことは、決して恥ではない。」",
+    "「運も実力のうち。運を引き寄せよう。」", "「感謝の心は、自分を豊かにする。」", "「無理をしない。でも、妥協もしない。」", "「小さな成功体験を積み重ねよう。」", "「目標は高く、敷居は低く。」",
+    "「他人の時計で生きるな。」", "「自分の機嫌は自分でとる。」", "「変化を恐れるな。変化を楽しめ。」", "「過去は変えられないが、未来は変えられる。」", "「どんな時も、ユーモアを忘れない。」",
+    "「完璧な人間などいない。だからチームがある。」", "「意見が対立するのは、真剣な証拠だ。」", "「逃げてもいい。生きていれば次がある。」", "「人生の主役は、いつだって自分だ。」", "「今、この瞬間を大切に。」",
+    "「見切り発車も、立派な出発だ。」", "「やりたい事が見つからないなら、目の前の事に没頭しろ。」", "「自分の直感を信じよう。」", "「無駄な経験など、一つもない。」", "「成功の反対は、何もしないこと。」",
+    "「常に『なぜ？』と問い続けよ。」", "「結果を出す者は、言い訳をしない。」", "「やる気は、やり始めてから出るものだ。」", "「自分の可能性に、自分で蓋をするな。」", "「人生にリセットボタンはない。コンティニューあるのみ。」",
+    "「休むこともまた、勇気。」", "「まずは、やってみる。話はそれからだ。」", "「他人の評価より、自分の納得。」", "「今日は残りの人生の最初の一日。」", "「焦るな、腐るな、諦めるな。」",
+    "「努力は必ず報われるとは限らないが、成功した者は皆努力している。」", "「何事も、楽しんだ者勝ち。」", "「笑顔は、万能の特効薬だ。」", "「明日やろうは馬鹿野郎。」", "「今日も一日、ご安全に！」"
+  ];
+  const takemuraBtn = $("btnTakemura");
+  const toastContainer = document.createElement("div");
+  toastContainer.className = "toast-container";
+  document.body.appendChild(toastContainer);
+
+  takemuraBtn.addEventListener("click", () => {
+    const quote = takemuraQuotes[Math.floor(Math.random() * takemuraQuotes.length)];
+    const toast = document.createElement("div");
+    toast.className = "quote-toast";
+    toast.innerHTML = `<strong>武村の金言</strong><div>${quote}</div>`;
+    toastContainer.appendChild(toast);
+    
+    // 5秒後にフェードアウト＆削除
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.classList.add("fade-out");
+        toast.addEventListener("animationend", () => {
+          if (toast.parentNode) toast.remove();
+        });
+      }
+    }, 5000);
   });
 </script>
 </body>
